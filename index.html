@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <META HTTP-EQUIV="pragma" CONTENT="no-cache"> 
+    <META HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
+    <META HTTP-EQUIV="expires" CONTENT="0">
+      
+      
+    <script src="./src/mui.js"></script>
+    <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+	  <script src="https://webapi.amap.com/maps?v=1.4.15&key=f91de0c40ed885c6b8337128aee7bfa8"></script>
+    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/mui/3.7.1/js/mui.js"></script> -->
+    <title>xgj_gas</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <!-- built files will be auto injected -->
+    <script>
+      function plusReady() {
+				plus.key.addEventListener("backbutton", function() {}); // 在这里调用plus api
+				//				sessionStorage.setItem('ts', JSON.stringify(this));
+			}
+
+			var first = null;
+			mui.back = function() {
+				//判断是否是首页
+				var topur = location.hash.split("#/")[1];
+				if(
+					topur == "serviceHome" ||
+          topur == "gasHome"
+				) {
+
+					//首次按键，提示‘再按一次退出应用’
+					if(!first) {
+						first = new Date().getTime();
+						mui.toast('再按一次退出应用');
+						setTimeout(function() {
+							first = null;
+						}, 1000);
+					} else {
+						if(new Date().getTime() - first < 1000) {
+							plus.runtime.quit();
+						}
+					}
+
+				} else {
+
+					window.history.back(-1);
+
+				}
+			}
+			document.addEventListener('plusready', plusReady, false); 
+    </script>
+  </body>
+
+  <script type="text/javascript">
+
+    //从地图设备中进入到指定的设备详情页
+    function toTargetEqu(obj){
+      console.log(obj) ; 
+      var equid = obj.getAttribute("equId") ; 
+      var sn = obj.getAttribute("sn") ; 
+      var equType = obj.getAttribute("equtype") ; 
+      console.log("设备id："+equid) ; 
+      location.hash = "/equipmentDetails?equid="+equid+"&sn="+sn+"&equType="+equType
+    }
+
+    //地图导航，跳转到 高德地图APP
+    function toAmap(obj){
+      console.log("执行导航操作") ;
+			var address = obj.getAttribute("box") ; 
+
+      var lng = obj.getAttribute("lnglat").split(/,|，/)[0] ;
+      var lat = obj.getAttribute("lnglat").split(/,|，/)[1] ;
+
+      var myHref = "amapuri://route/plan/?sid=BGVIS1&did=BGVIS2&dlat="+lat+"&dlon="+lng+"&dname="+address+"&dev=0&t=0" ; 
+      console.log(myHref) ; 
+      location.href = myHref ; 
+		}
+  </script>
+</html>
+
