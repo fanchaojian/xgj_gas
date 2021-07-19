@@ -196,7 +196,7 @@
 						</select>
 					</div>
 				</div>
-				<div class="col-xs-12 item_qt">
+				<div class="col-xs-12 item">
 					<div class="col-xs-3" >
 						<input type="text" class="form-control input-sm" v-model="RadiationPressure" :disabled="read" placeholder="放散压力">
 					</div>
@@ -218,6 +218,49 @@
 					</div>
 				</div>
 
+				<div class="col-xs-12 item">
+					<div class="col-xs-12">
+						<span>随行人员：</span>
+						<span @click="loadingPartner" class="common_shadow2" style="display:inline-block; padding:2px 5px;">
+							选择
+						</span>
+					</div>
+
+					<!--随行人员选择弹出框-->
+					<div v-if="afterSalesInfoPull" class="col-xs-12" style="position:relative;">
+						<div class="common_shadow2 afterSalesInfoBox">
+							<p>选择随行人员</p>
+							<ul id="afterSalesInfo">
+								<li @click="addPartner($event)">赵爱波</li>
+								<li @click="addPartner($event)">冯东旭</li>
+								<li @click="addPartner($event)">高连有</li>
+								<li @click="addPartner($event)">赵雨</li>
+								<li @click="addPartner($event)">杜长生</li>
+								<li @click="addPartner($event)">李计</li>
+								<li @click="addPartner($event)">刘玉柱</li>
+								<li @click="addPartner($event)">刘云涛</li>
+								<li @click="addPartner($event)">凡朝剑</li>
+							</ul>
+
+							<div class="doSomething" style="width:100px; position:absolute; bottom:10px; right:10px;">
+								<span>确认选择</span>
+							</div>
+
+							<div @click="afterSalesInfoPull = false ;" class="doSomething" style="width:50px; position:absolute; bottom:10px; left:10px;">
+								<span>关闭</span>
+							</div>
+						</div>
+					</div>
+
+					<!--随行人员展示-->
+					<div class="col-xs-12" >
+						<span class="common_shadow2 partnerItem">
+							<span style="color:green;">赵爱波</span>
+							<span class="delPartner">X</span>
+						</span>
+					</div>
+				</div>
+
 				<div class="col-xs-12 item_qt">	
 					故障说明：<span style="font-size:12px; color:red;"></span>
 					<input type="text" v-model="failurecatlog" :disabled="read" class="form-control input-sm"></input>
@@ -233,7 +276,6 @@
                         <div class="col-xs-12"><input id="partner" v-model="partner" :disabled="read" class="form-control input-sm" type="text" placeholder=""></div>
                     </div>
 				</div>
-				
 				
 				<div class="col-xs-12 item_qt">任务备注：<textarea id="remark" v-model="remark" :disabled="read" class="form-control" rows="3"></textarea></div>
 				<div v-if="! isComplete" class="col-xs-12 item center" style="border-bottom:0px;">
@@ -303,7 +345,10 @@ export default {
 				params:{
 					'keywords':this.$store.state.repairData.keywords ,
 				}
-			}
+			},
+			//所有随行人员数据，从接口中获取
+			partnerData:[],
+			afterSalesInfoPull:false
 		} ; 
     },
 	components:{
@@ -328,6 +373,38 @@ export default {
 			});
 
 			this.imgs.splice(index,1) ;
+		},
+
+		//加载随行人员数据
+		loadingPartner(){
+			//弹出框显示
+			this.afterSalesInfoPull = true ;
+			//从SF "售后随行"表中加载数据
+			var _this = this ; 
+			_this.$request_SF({
+				method:"GET",
+				url:"/AfterSalesInfo/getAll",
+				headers:{
+					Authorization:"Bearer "+this.accessToken
+				}
+			},res=>{
+				console.log(res) ;
+				_this.partnerData = res.data ; 
+			},err=>{
+				console.log("获取售后人员数据失败") ;
+				_this.$notify({
+					title: '',
+					message: '获取随行报错，程序错误。',
+					duration:1500,
+					type: 'error'
+				}); 
+			}) ; 
+		},
+		//选择随行人员
+		addPartner(obj){
+			var $el = $(obj.currentTarget) ;
+			$el.toggleClass("partnerChoose") ;
+
 		},
 
 		//上传照片到服务器
@@ -767,6 +844,35 @@ export default {
 
 	.el-upload-list--picture .el-upload-list__item-thumbnail {
 	height:50px;
+	}
+
+	#afterSalesInfo {
+		list-style: none;
+		padding-left: 0;
+	}
+
+	#afterSalesInfo li {
+		display: inline-block;
+		padding:2px 5px; 
+		margin:10px 10px 0 0 ;
+		border-radius: 4px;;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04)  ; 
+	}
+
+	.afterSalesInfoBox {
+		position:absolute; top:-25px; right:0; width:80%; height:200px;  z-index:1000; background-color:#fff; border-radius:4px; padding:10px;
+	}
+
+	.partnerItem {
+		margin:10px 10px 0 0; display:inline-block; padding:2px 5px; border-radius:4px;
+	}
+
+	.delPartner {
+		display:inline-block; position:relative; top:-5px; right:0px; color:orange;
+	}
+
+	.partnerChoose {
+		background-color: #e0eee8;
 	}
 
 </style>

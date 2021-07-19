@@ -477,7 +477,7 @@ export default vm ;
         height:100%; 
         height:100%; 
         border:1px solid #eee; 
-        box-shadow:0 0 5px 1px #eee; 
+        box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04)  ; 
         border-radius: 5px;
         text-align:center;
     }

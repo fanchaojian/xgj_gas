@@ -23,7 +23,9 @@ export default {
 
 <style>
 	#app {
-		font-family:'宋体';
+		font-family: 'Avenir', Helvetica, Arial, sans-serif;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
 
 		width:100%;
 		height:100%;
@@ -126,5 +128,8 @@ export default {
 		box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04)  ; 
 	}
 
+	.common_shadow2{
+		box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04)  ; 
+	}
 	
 </style>
