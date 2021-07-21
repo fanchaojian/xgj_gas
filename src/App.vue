@@ -10,6 +10,7 @@
 //引入bootstrap
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.min.js'
+import '../src/mui.js'
 
 //阿里巴巴图标库
 import '@/assets/iconFont/albaba_AntDesign0fficialIcons/iconfont.css'
@@ -29,6 +30,11 @@ export default {
 
 		width:100%;
 		height:100%;
+	}
+
+	* {
+		font-family: '雅黑';
+		font-weight: 400;
 	}
 
 	html {
@@ -131,5 +137,6 @@ export default {
 	.common_shadow2{
 		box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04)  ; 
 	}
+	
 	
 </style>

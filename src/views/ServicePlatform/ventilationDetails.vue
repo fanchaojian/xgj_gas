@@ -112,7 +112,7 @@
 
 				<div class="col-xs-12">
 					 <!-- 这儿是图片显示的位置 -->
-					<div v-for="img in imgs">
+					<div v-for="img in imgs" :key="img.name">
 						<div class="imgbox">
 						<!--防误触UI（一般）-->
 							<div class="col-xs-3"><img class="uploadimg" :src="img.url"/></div>
@@ -222,12 +222,66 @@
 					</div>
 				</div>
 
-                <div class="col-xs-12 item_qt">
+                <!--<div class="col-xs-12 item_qt">
 					<div class="col-xs-12">随行人员：</div>
                     <div class="col-xs-12">
                         <div class="col-xs-12"><input id="partner" v-model="partner" :disabled="read" class="form-control input-sm" type="text" placeholder=""></div>
                     </div>
+				</div> -->
+				<!--随行人员-->
+				<div class="col-xs-12 item">
+					<div class="col-xs-12">
+						<span>随行人员：</span>
+						<span @click="loadingPartner" class="common_shadow2" style="display:inline-block; padding:2px 5px; border-radius:4px; background-color:#F0FFFF; color:#00BFFF; ">
+							选择
+						</span>
+					</div>
+
+					<!--随行人员选择弹出框-->
+					<div  v-if="afterSalesInfoPull" class="col-xs-12" style="position:relative;">
+						<div v-loading="loadPartner" class="common_shadow2 afterSalesInfoBox">
+							<p>选择随行人员</p>
+							<ul id="afterSalesInfo">
+								<li v-for="partner in partnerData" 
+									:key="partner.userId__c" 
+									@click="addPartner($event)" 
+									:value="partner.userId__c" :name="partner.Name" :class="partner.userId__c | filterPartner(partnerSelected)">
+									
+									{{partner.Name}}
+									
+								</li>
+							</ul>
+
+							<div @click="confirmChoose" class="doSomething" style="width:100px; position:absolute; bottom:10px; right:10px;">
+								<span>确认选择</span>
+							</div>
+
+							<div @click="afterSalesInfoPull = false ;" class="doSomething" style="width:50px; position:absolute; bottom:10px; left:10px;">
+								<span>关闭</span>
+							</div>
+						</div>
+					</div>
+
+					<!--随行人员展示-->
+					<div class="col-xs-12" >
+						<span v-for="partner in partnerSelected"  :key="partner.userId" class="common_shadow2 partnerItem">
+							<span style="color:green;">{{partner.name}}</span>
+						</span>
+					</div>
+					
 				</div>
+				
+				<div class="col-xs-12 item_qt">
+					<div class="col-xs-4">	
+						单程(公里数):
+						<input type="text" v-model="mileage" @blur="mileageValidation($event)" :disabled="read"  class="form-control input-sm" />
+					</div>
+					<div class="col-xs-8">
+						<span style="font-size:12px; color:#00BFFF;">(整数)，跨区域作业请填写。</span> <br />
+						<span style="font-size:13px; color:red;">{{VDMsg.title}}</span>
+					</div>
+				</div>
+
 				<div class="col-xs-12 item_qt">
 					<div class="col-xs-12">现场联系人：</div>
                     <div class="col-xs-12">
@@ -304,7 +358,18 @@ export default {
 				params:{
 					'keywords':this.$store.state.ventilationData.keywords ,
 				}
-			}
+			},
+			//2021年8月 添加功能，随行，公里数
+			partnerData:[], //存放随行加载数据的数组
+			afterSalesInfoPull:false,  //是否拉取随行选择框
+			loadPartner:false,  //随行数据是否加载完毕
+			partnerSelected:[] ,  //已经选择的随行
+			mileage:"" , 	//里程
+				//里程整数校验消息
+				VDMsg:{
+					title:"",
+					result:true
+				},  
 	    } ; 
     },
 	components:{
@@ -330,6 +395,80 @@ export default {
 
 			this.imgs.splice(index,1) ;
 		},
+
+		//加载随行人员数据
+		loadingPartner(){
+			this.loadPartner = true ;
+			this.partnerData = [] ;
+			//弹出框显示
+			this.afterSalesInfoPull = true ;
+			//从SF "售后随行"表中加载数据
+			var _this = this ; 
+			_this.$request_SF({
+				method:"GET",
+				url:"/AfterSalesInfo/getAll",
+				headers:{
+					Authorization:"Bearer "+this.accessToken
+				}
+			},res=>{
+				console.log(res) ;
+				_this.partnerData = res.data ; 
+				this.loadPartner = false ;
+				//加载完成后，将已经选择的随行进行回显标记
+
+			},err=>{
+				console.log("获取售后人员数据失败") ;
+				this.loadPartner = false ;
+				_this.$notify({
+					title: '',
+					message: '获取随行报错，程序错误。',
+					duration:1500,
+					type: 'error'
+				}); 
+			}) ; 
+		},
+		//选择随行人员
+		addPartner(obj){
+			var $el = $(obj.currentTarget) ;
+			$el.toggleClass("partnerChoose") ;
+
+		},
+		//确认选择随行
+		confirmChoose(){
+			var _this = this ; 
+			var $elArr = $("#afterSalesInfo").find(".partnerChoose") ; 
+			if($elArr.length<=3){
+				_this.partnerSelected = [] ; 
+				//遍历已选择的元素，添加到“随行人员”数组中
+				$elArr.each(function(i,e){
+					var userId = $(e).attr("value").trim() ; 
+					var name = $(e).attr("name").trim() ;
+					_this.partnerSelected.push({'userId':userId,'name':name}) ; 
+				}) ;
+				_this.afterSalesInfoPull = false ; 
+			}else{
+				alert("随行不可以超过3个，请重新选择。") ; 
+			}
+		},
+
+		//公里数整数校验
+		mileageValidation(obj){
+			var $el = $(obj.currentTarget) ;
+			var value = $el.val() ;
+			var re = /^[0-9]*$/;
+			if(! re.test(value.trim())){
+				this.VDMsg = {
+					title:"请输入数字",
+					result:false
+				}   
+			}else{
+				this.VDMsg = {
+					title:"",
+					result:true 
+				}
+			}
+		},
+
 		//上传照片到服务器
 		upload(imgname,imgurl,type){
 			uploadImg(this,this.taskid,imgname,imgurl,type,'VentilationTask') ; 
@@ -430,6 +569,10 @@ export default {
 		
 		//签退方法
 		signout(){
+			if(! this.VDMsg.result){
+				alert("请正确填写公里数，或清空数据。") ; 
+				return false ;
+			}
 			let _this = this ; 
 			//获取距离
 			_this.getDistance() ; 
@@ -449,6 +592,17 @@ export default {
 					if(_this.InletPressure.trim().length > 0 && _this.OutletPressure.trim().length > 0 && _this.LockupPressure.trim().length > 0 && _this.RadiationPressure.trim().length > 0 && _this.CutPressure.trim().length > 0){
 						_this.read = true; 			//input 只读状态
 						_this.isable = true;   //按钮 “不可操作” 状态
+						
+						//随行人员
+						var partnerArr = [] ;
+						if(_this.partnerSelected.length > 0){
+							for(var i=0 ;i<_this.partnerSelected.length ;i++){
+								var userId = _this.partnerSelected[i].userId ; 
+								partnerArr.push(userId) ; 
+							}
+						}
+
+						var partnerIds = partnerArr.join(',') ;
 
 						_this.$request_SF({
 							method:"POST",
@@ -465,6 +619,8 @@ export default {
 								partner:_this.partner ,  //随行人员
 								SiteContact:_this.SiteContact,   //现场联系人
 								remark:_this.remark ,  //备注
+								partnerIds:partnerIds,						//随行人员，userID以逗号分隔
+								mileage:parseInt(_this.mileage) ,			//公里数
 							},
 							headers:{
 								Authorization:"Bearer "+this.accessToken
@@ -613,6 +769,15 @@ export default {
 	filters:{
 		dataformat:function(datastr,pattern=""){
 			return Moment(datastr).format('YYYY-MM-DD HH:mm:ss')
+		},
+		filterPartner(userId,partnerSelected){
+			var arrStr = JSON.stringify(partnerSelected) ; 
+			//查找已经选择了的随行，并与传递过来的随行id进行匹配
+			if(arrStr.indexOf(userId) != -1){
+				return {'partnerChoose':true} ; 
+			}else{
+				return {'partnerChoose':false} ; 
+			}
 		}
 	},
 	mounted(){
@@ -639,6 +804,11 @@ export default {
 	}
 	.ds {
 		font-size:12px ; 
+	}
+	input {
+		border:1px solid #ddd;
+		box-shadow: 0 0 0 0 #fff;
+		height:28px;
 	}
   
 	.lineShadow {
@@ -748,15 +918,52 @@ export default {
 	}
 
 	.el-upload-list--picture .el-upload-list__item  {
-	height:60px;
-	padding:4px 5px 5px 90px ;
+		height:60px;
+		padding:4px 5px 5px 90px ;
 	}
 
 	.el-upload-list--picture .el-upload-list__item-name {
-	margin-top:12px;
+		margin-top:12px;
 	}
 
 	.el-upload-list--picture .el-upload-list__item-thumbnail {
-	height:50px;
+		height:50px;
+	}
+
+	#afterSalesInfo {
+		list-style: none;
+		padding-left: 0;
+	}
+
+	#afterSalesInfo li {
+		display: inline-block;
+		padding:2px 5px; 
+		margin:15px 10px 0 0 ;
+		border-radius: 4px;
+		font-family:'雅黑' ;
+		font-weight:300;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04)  ; 
+	}
+
+	.afterSalesInfoBox {
+		position:absolute; 
+		top:-25px; 
+		right:0; 
+		width:80%; 
+		height:200px;  
+		z-index:1000; 
+		background-color:#fff; 
+		border-radius:4px; padding:10px;
+		border:1px solid #87CEFA ;
+		box-shadow: 0 0 5px 1px #87CEFA;
+	}
+
+	.partnerItem {
+		margin:10px 10px 0 0; display:inline-block; padding:2px 5px; border-radius:4px;
+	}
+
+	.partnerChoose {
+		background-color: #F0FFFF;
+		color:#00BFFF;
 	}
 </style>

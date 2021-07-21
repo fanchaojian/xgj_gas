@@ -11,7 +11,7 @@ module.exports = {
     assetsSubDirectory: 'static',
     assetsPublicPath: '/',
     proxyTable: {
-        '/api': {
+        /*'/api': {
                 target: 'https://cloud.yunpuhuaxing.com',//        http://172.26.28.203:8080/gas   http://platform.xgjgas.com   http://172.26.28.204:8007/gas
                 changeOrigin: true,
                 pathRewrite: {
@@ -31,7 +31,7 @@ module.exports = {
                 pathRewrite: {
                     '^/lApi': ''
                 }
-        }, 
+        }, */
     },
 
     // Various Dev Server settings

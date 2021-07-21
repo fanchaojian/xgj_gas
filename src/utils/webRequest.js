@@ -3,8 +3,8 @@ import axios from 'axios'
 export function request(config,success,failure){
     //创建axios实例
     const instance = axios.create({
-        baseURL:'/api',
-        //baseURL:"https://cloud.yunpuhuaxing.com",
+        //baseURL:'/api',
+        baseURL:"https://cloud.yunpuhuaxing.com",
         timeout:100000
     })
     //发送真正的网络请求
