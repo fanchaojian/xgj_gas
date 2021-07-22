@@ -141,7 +141,7 @@ export default {
 
 		//自动填写用户名和密码输入框
 		this.username = localStorage.getItem("userName") != null ? localStorage.getItem("userName"):'' ; 
-		this.username = localStorage.getItem("password") != null ? localStorage.getItem("password"):'' ; 
+		this.password = localStorage.getItem("password") != null ? localStorage.getItem("password"):'' ; 
 	},
 }
 </script>

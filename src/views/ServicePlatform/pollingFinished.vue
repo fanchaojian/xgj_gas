@@ -35,7 +35,7 @@
 				<!--任务列表，遍历体-->
 				<div  v-for="(polling,i) in search(keywords)" :id="polling.Id" :index="i" :key="polling.Id" class="col-xs-12 splitLine" >
 					<div id="item" class="col-xs-12" style="line-height:50px;">
-						<div class="col-xs-10">{{polling.Name}}</div>
+						<div class="col-xs-10" style="font-weight:400;">{{polling.Name}}</div>
 						
 						<div class="col-xs-2" align="right">
 							<a @click.stop="showDetails($event)">

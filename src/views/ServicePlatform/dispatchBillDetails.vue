@@ -101,7 +101,7 @@
 				
 
 				<div class="col-xs-12">
-					<div v-for="img in imgs">
+					<div v-for="img in imgs" :key="img.name">
 						<div class="imgbox">
 						<!--防误触UI（一般）-->
 							<div class="col-xs-3"><img class="uploadimg" :src="img.url"/></div>

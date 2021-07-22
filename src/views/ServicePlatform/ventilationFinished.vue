@@ -35,7 +35,7 @@
 				<!--任务列表，遍历体-->
 				<div  v-for="(ventilation,i) in search(keywords)" :id="ventilation.Id" :index="i" :key="ventilation.Id" class="col-xs-12 container-fluid splitLine">
 					<div id="item" class="col-xs-12" style="line-height:50px; ">
-						<div  class="col-xs-10">{{ventilation.Name}}</div>
+						<div  class="col-xs-10" style="font-weight:400;">{{ventilation.Name}}</div>
 						<div class="col-xs-2" align="right">
 							<a @click.stop="showDetails($event)">
 								<span class="glyphicon glyphicon-menu-down"></span>

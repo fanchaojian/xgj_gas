@@ -222,7 +222,7 @@
 				<div class="col-xs-12 item">
 					<div class="col-xs-12">
 						<span>随行人员：</span>
-						<span @click="loadingPartner" class="common_shadow2" style="display:inline-block; padding:2px 5px; border-radius:4px; background-color:#F0FFFF; color:#00BFFF; ">
+						<span @click="loadingPartner" class="common_shadow2" style="display:inline-block; padding:2px 5px; border-radius:4px;  color:green; ">
 							选择
 						</span>
 					</div>
@@ -230,7 +230,7 @@
 					<!--随行人员选择弹出框-->
 					<div  v-if="afterSalesInfoPull" class="col-xs-12" style="position:relative;">
 						<div v-loading="loadPartner" class="common_shadow2 afterSalesInfoBox">
-							<p>选择随行人员</p>
+							<p>选择随行人员</p><span style="font-size:12px; color:green;">最多选择5个，第二次点击取消选择</span>
 							<ul id="afterSalesInfo">
 								<li v-for="partner in partnerData" 
 									:key="partner.userId__c" 
@@ -241,7 +241,7 @@
 									
 								</li>
 							</ul>
-
+							
 							<div @click="confirmChoose" class="doSomething" style="width:100px; position:absolute; bottom:10px; right:10px;">
 								<span>确认选择</span>
 							</div>
@@ -254,8 +254,8 @@
 
 					<!--随行人员展示-->
 					<div class="col-xs-12" >
-						<span v-for="partner in partnerSelected"  :key="partner.userId" class="common_shadow2 partnerItem">
-							<span style="color:green;">{{partner.name}}</span>
+						<span v-for="partner in partnerSelected"  :key="partner.userId" class="common_shadow2 partnerItem" style="background-color:#F0FFFF;">
+							<span style="color:#00BFFF;">{{partner.name}}</span>
 						</span>
 					</div>
 					
@@ -267,7 +267,7 @@
 						<input type="text" v-model="mileage" @blur="mileageValidation($event)" :disabled="read"  class="form-control input-sm" />
 					</div>
 					<div class="col-xs-8">
-						<span style="font-size:12px; color:#00BFFF;">(整数)，跨区域作业请填写。</span> <br />
+						<span style="font-size:12px; color:green;">(整数)，跨区域作业请填写。</span> <br />
 						<span style="font-size:13px; color:red;">{{VDMsg.title}}</span>
 					</div>
 				</div>
@@ -347,7 +347,7 @@ export default {
               	info:"",
            	},
 			dist:"",  //当前位置与设备之间的距离
-			autoAssertLnglat:false,  //是否是自动维护的设备经纬度
+			//autoAssertLnglat:false,  //是否是自动维护的设备经纬度
 			myLocation:false, //是否定位成功
 			unit1:"kPa",
 			unit2:"kPa",
@@ -483,30 +483,33 @@ export default {
             //调用接口，修改任务签到状态
 			let _this = this ;
 			var equLngLat = _this.$store.state.repairData.repair.Equipment__r.LongitudeAndLatitude__c ;  //设备经纬度
-			var arr = equLngLat.split(/,|，/) ;  
-			//经纬度为空，或者格式为“纬度，精度”的位置
-			if(equLngLat == null || parseInt(arr[0])<parseInt(arr[1])){
-				if(_this.position.info == "SUCCESS"){
-					_this.isable = true; 
-					_this.signCallout(_this,_this.position.lnglat,true) ; 
+			
+			if(_this.position.info != "SUCCESS"){
+				_this.$notify({
+					title: '',
+					message: '正在定位，请稍后。。。',
+					duration:1500,
+					type: 'info'
+				}); 
+				return false ; 
+			}
 
-				}else{
-					_this.$notify({
-						title: '',
-						message: '正在定位，请稍后。。。',
-						duration:1500,
-						type: 'info'
-					}); 
-				}
+			//经纬度为空，或者格式为“纬度，精度”的位置
+			if(equLngLat == null || equLngLat == 'undefined'){
+				_this.isable = true; 
+				_this.signCallout(_this,_this.position.lnglat,true) ; 
 			}else{
-				//距离计算
-				_this.getDistance() ;
-				if(_this.position.info=="SUCCESS"){
+				var arr = equLngLat.split(/,|，/) ;  
+				if(parseInt(arr[0])<parseInt(arr[1])){
+					_this.isable = true; 
+					_this.signCallout(_this,_this.position.lnglat) ; 
+				}else{
+					//_this.getDistance() ;
 					var Precision = 'Precision__c' in _this.repair ? _this.repair.Precision__c : 200 ;
 					
 					if(parseInt(_this.dist) <= Precision){
 						_this.isable = true; 
-						_this.signCallout(_this,"",false) ; 
+						_this.signCallout(_this,"") ; 
 					}else{
 						_this.$notify({
 							title: '签到提示',
@@ -516,10 +519,9 @@ export default {
 						}); 
 					}
 				}
-				
 			}
         },
-		signCallout(vm,lnglat,isAutoAssertLnglat){
+		signCallout(vm,lnglat){
 			
 			var _this = vm ; 
 			_this.$request_SF({
@@ -546,7 +548,7 @@ export default {
 					_this.isSign2 = false ; 
 					_this.isable = false ; 
 
-					_this.autoAssertLnglat = isAutoAssertLnglat ;   //自动签到
+					//_this.autoAssertLnglat = isAutoAssertLnglat ;   //自动签到
 					//更新签到时间
 					_this.signtime = true ;  
 				}else{
@@ -576,7 +578,7 @@ export default {
 			}
 			let _this = this ; 
 			//获取距离
-			_this.getDistance() ; 
+			//_this.getDistance() ; 
 
 			//获取任务中配置的允许的定位精度，默认为200
 			var Precision = 'Precision__c' in _this.repair ? _this.repair.Precision__c : 200 ;
@@ -606,7 +608,7 @@ export default {
 						}
 
 						var partnerIds = partnerArr.join(',') ;
-
+						var gls = _this.mileage.trim().length == 0 ? '': parseInt(_this.mileage) ; 
 
 						_this.$request_SF({
 							method:"POST",
@@ -626,7 +628,7 @@ export default {
 								partner:_this.partner ,  					//随行人员 2021年8月修改为选择
 								remark:_this.remark ,  						//备注
 								partnerIds:partnerIds,						//随行人员，userID以逗号分隔
-								mileage:parseInt(_this.mileage) ,			//公里数
+								mileage:gls ,			//公里数
 							},
 							headers:{
 								Authorization:"Bearer "+this.accessToken
@@ -742,31 +744,33 @@ export default {
 		getDistance(){
 			var _this = this ; 
 			var equLngLat = _this.$store.state.repairData.repair.Equipment__r.LongitudeAndLatitude__c ;  //设备经纬度
-			var arr = equLngLat.split(/,|，/) ;   //分割半角或全角，
 
 			//定位当前位置成功
-			if(_this.position.info == "SUCCESS"){ 
-				//设备经纬度不为空
-				if(equLngLat != null && equLngLat != "" && parseInt(arr[0])>parseInt(arr[1])){
-					
-					var start = _this.position.position ; 
-					var end = new AMap.LngLat(arr[0],arr[1]) ; 
-					_this.dist = Math.round(start.distance(end));   //当前位置和设备经纬度之间的直线距离
-					console.log("距离2："+this.dist)  ;
-				}
-				//自定维护设备经纬度
-				else if(_this.autoAssertLnglat == true){
-					_this.dist = "0" ; 
-				}
-			}else {
+			if(! _this.position.info == "SUCCESS"){ 
 				_this.$notify({
 					title: '',
 					message: "正在定位当前位置，请稍后。。。",
 					duration:1500,
 					type: 'info'
 				}); 
+				return false ; 
 			}
-			
+
+			//设备经纬度不为空
+			if(equLngLat != null && equLngLat != "" && equLngLat != 'undefined'){
+				var arr = equLngLat.split(/,|，/) ;   //分割半角或全角，
+				if(parseInt(arr[0])>parseInt(arr[1])){
+					var start = _this.position.position ; 
+					var end = new AMap.LngLat(arr[0],arr[1]) ; 
+					_this.dist = Math.round(start.distance(end));   //当前位置和设备经纬度之间的直线距离
+					console.log("距离2："+this.dist)  ;
+				}else {
+					this.dist = 0 ; 
+				}
+				
+			}else {
+				_this.dist = 0 ; 
+			}
      	},
 
 		 //刷新地址，重新定位
@@ -806,6 +810,7 @@ export default {
     * {
 		margin:0 ; 
 		padding:0 ; 
+		font-weight:400;
 	}
 	.container-fluid {
 		padding-right:15px;
@@ -934,27 +939,28 @@ export default {
 	}
 
 	.el-upload-list--picture .el-upload-list__item  {
-	height:60px;
-	padding:4px 5px 5px 90px ;
+		height:60px;
+		padding:4px 5px 5px 90px ;
 	}
 
 	.el-upload-list--picture .el-upload-list__item-name {
-	margin-top:12px;
+		margin-top:12px;
 	}
 
 	.el-upload-list--picture .el-upload-list__item-thumbnail {
-	height:50px;
+		height:50px;
 	}
 
 	#afterSalesInfo {
 		list-style: none;
 		padding-left: 0;
+		padding:5px 0 60px 0;
 	}
 
 	#afterSalesInfo li {
 		display: inline-block;
 		padding:2px 5px; 
-		margin:15px 10px 0 0 ;
+		margin:10px 10px 0 0 ;
 		border-radius: 4px;
 		font-family:'雅黑' ;
 		font-weight:300;
@@ -965,8 +971,7 @@ export default {
 		position:absolute; 
 		top:-25px; 
 		right:0; 
-		width:80%; 
-		height:200px;  
+		width:80%;  
 		z-index:1000; 
 		background-color:#fff; 
 		border-radius:4px; padding:10px;

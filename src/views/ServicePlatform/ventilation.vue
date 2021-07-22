@@ -36,7 +36,7 @@
 				<!--任务列表，遍历体-->
 				<div  v-for="(ventilation,i) in search(keywords)" :id="ventilation.Id" :index="i" :key="ventilation.Id" class="col-xs-12 container-fluid splitLine">
 					<div id="item" class="col-xs-12" style="padding:15px 0px;">
-						<div @click.stop="toDetails(ventilation)" class="col-xs-9"><p style="font-size:14px;">{{ventilation.Name}}</p></div>
+						<div @click.stop="toDetails(ventilation)" class="col-xs-9"><p style="font-size:14px; font-weight:400;">{{ventilation.Name}}</p></div>
 						<div class="col-xs-2"><span style="font-size:12px;">签到</span><span :class="{'sbox':true,'finished':ventilation.SignState__c=='已签到' ? true:false,'nFinished':ventilation.SignState__c=='已签到' ? false:true}"></span></div>
 						<div class="col-xs-1" align="right">
 							<a @click.stop="showDetails($event)">

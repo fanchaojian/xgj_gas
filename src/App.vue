@@ -34,7 +34,6 @@ export default {
 
 	* {
 		font-family: '雅黑';
-		font-weight: 400;
 	}
 
 	html {

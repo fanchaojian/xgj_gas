@@ -36,7 +36,7 @@
 				<!--任务列表，遍历体-->
 				<div  v-for="(polling,i) in search(keywords)" :id="polling.Id" :index="i" :key="polling.Id" class="col-xs-12 splitLine" >
 					<div id="item" class="col-xs-12" style="padding:15px 0px;">
-						<div @click.stop="toDetails(polling)" class="col-xs-9"><p style="font-size:14px;">{{polling.Name}}</p></div>
+						<div @click.stop="toDetails(polling)" class="col-xs-9"><p style="font-size:14px; font-weight:400;">{{polling.Name}}</p></div>
 						<div class="col-xs-2" align="center"><span style="font-size:12px;">签到</span><span :class="{'sbox':true,'finished':polling.SignState__c=='已签到' ? true:false,'nFinished':polling.SignState__c=='已签到' ? false:true}"></span></div>
 						
 						<div class="col-xs-1" align="right">

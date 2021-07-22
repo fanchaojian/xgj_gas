@@ -31,7 +31,7 @@ module.exports = {
                 pathRewrite: {
                     '^/lApi': ''
                 }
-        }, */
+        },  */
     },
 
     // Various Dev Server settings

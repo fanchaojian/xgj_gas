@@ -209,14 +209,55 @@
                         <div class="col-xs-4"><span style="line-height:30px; color:red; font-size:12px; text-align:left;">（必填）</span></div>
                     </div>
 				</div>
-				
+				<!--随行人员-->
+				<div class="col-xs-12 item">
+					<div class="col-xs-12">
+						<span>随行人员：</span>
+						<span @click="loadingPartner" class="common_shadow2" style="display:inline-block; padding:2px 5px; border-radius:4px;  color:green; ">
+							选择
+						</span>
+					</div>
 
-                <div class="col-xs-12 item_qt">
+					<!--随行人员选择弹出框-->
+					<div  v-if="afterSalesInfoPull" class="col-xs-12" style="position:relative;">
+						<div v-loading="loadPartner" class="common_shadow2 afterSalesInfoBox">
+							<p>选择随行人员</p><span style="font-size:12px; color:green;">最多选择3个，第二次点击取消选择</span>
+							<ul id="afterSalesInfo">
+								<li v-for="partner in partnerData" 
+									:key="partner.userId__c" 
+									@click="addPartner($event)" 
+									:value="partner.userId__c" :name="partner.Name" :class="partner.userId__c | filterPartner(partnerSelected)">
+									
+									{{partner.Name}}
+									
+								</li>
+							</ul>
+							
+							<div @click="confirmChoose" class="doSomething" style="width:100px; position:absolute; bottom:10px; right:10px;">
+								<span>确认选择</span>
+							</div>
+
+							<div @click="afterSalesInfoPull = false ;" class="doSomething" style="width:50px; position:absolute; bottom:10px; left:10px;">
+								<span>关闭</span>
+							</div>
+						</div>
+					</div>
+
+					<!--随行人员展示-->
+					<div class="col-xs-12" >
+						<span v-for="partner in partnerSelected"  :key="partner.userId" class="common_shadow2 partnerItem" style="background-color:#F0FFFF;">
+							<span style="color:#00BFFF;">{{partner.name}}</span>
+						</span>
+					</div>
+					
+				</div>
+
+                <!--<div class="col-xs-12 item_qt">
 					<div class="col-xs-12">随行人员:</div>
                     <div class="col-xs-12">
                         <div class="col-xs-8"><input id="partner" v-model="partner" :disabled="read" class="form-control input-sm" type="text" placeholder=""></div>
                     </div>
-				</div>
+				</div>  -->
 
 				<div class="col-xs-12 item_qt">
 					<div class="col-xs-12">巡检记录:</div>
@@ -278,7 +319,7 @@ export default {
               	info:"",
            	},
 			dist:"",  					//当前位置与设备之间的距离
-			autoAssertLnglat:false,  	//是否是自动维护的设备经纬度
+			//autoAssertLnglat:false,  	//是否是自动维护的设备经纬度
 			myLocation:false , 			//是否定位成功
 			unit:"kPa",  				//运行压力的单位
 			reason:"",	 				//停运原因
@@ -291,7 +332,13 @@ export default {
 				params:{
 					'keywords':this.$store.state.pollingData.keywords ,
 				}
-			}
+			},
+			//2021年8月 添加功能，随行，公里数
+			partnerData:[], //存放随行加载数据的数组
+			afterSalesInfoPull:false,  //是否拉取随行选择框
+			loadPartner:false,  //随行数据是否加载完毕
+			partnerSelected:[] ,  //已经选择的随行
+			
         } ; 
     },
 	components:{
@@ -317,6 +364,61 @@ export default {
 
 			this.imgs.splice(index,1) ;
 		},
+		//加载随行人员数据
+		loadingPartner(){
+			this.loadPartner = true ;
+			this.partnerData = [] ;
+			//弹出框显示
+			this.afterSalesInfoPull = true ;
+			//从SF "售后随行"表中加载数据
+			var _this = this ; 
+			_this.$request_SF({
+				method:"GET",
+				url:"/AfterSalesInfo/getAll",
+				headers:{
+					Authorization:"Bearer "+this.accessToken
+				}
+			},res=>{
+				console.log(res) ;
+				_this.partnerData = res.data ; 
+				this.loadPartner = false ;
+				//加载完成后，将已经选择的随行进行回显标记
+
+			},err=>{
+				console.log("获取售后人员数据失败") ;
+				this.loadPartner = false ;
+				_this.$notify({
+					title: '',
+					message: '获取随行报错，程序错误。',
+					duration:1500,
+					type: 'error'
+				}); 
+			}) ; 
+		},
+		//选择随行人员
+		addPartner(obj){
+			var $el = $(obj.currentTarget) ;
+			$el.toggleClass("partnerChoose") ;
+
+		},
+		//确认选择随行
+		confirmChoose(){
+			var _this = this ; 
+			var $elArr = $("#afterSalesInfo").find(".partnerChoose") ; 
+			if($elArr.length<=3){
+				_this.partnerSelected = [] ; 
+				//遍历已选择的元素，添加到“随行人员”数组中
+				$elArr.each(function(i,e){
+					var userId = $(e).attr("value").trim() ; 
+					var name = $(e).attr("name").trim() ;
+					_this.partnerSelected.push({'userId':userId,'name':name}) ; 
+				}) ;
+				_this.afterSalesInfoPull = false ; 
+			}else{
+				alert("随行不可以超过3个，请重新选择。") ; 
+			}
+		},
+
 		//上传照片到服务器
 		upload(imgname,imgurl,type){
 			uploadImg(this,this.taskid,imgname,imgurl,type,'MaintainPolling') ; 
@@ -324,37 +426,36 @@ export default {
 		
 		//签到方法
         signin(){
-			let _this = this ; 
+            //调用接口，修改任务签到状态
+			let _this = this ;
+			var equLngLat = _this.polling.Equipment__r.LongitudeAndLatitude__c ;  //设备经纬度
+			
+			if(_this.position.info != "SUCCESS"){
+				_this.$notify({
+					title: '',
+					message: '正在定位，请稍后。。。',
+					duration:1500,
+					type: 'info'
+				}); 
+				return false ; 
+			}
 
-			var equLngLat = _this.$store.state.pollingData.polling.Equipment__r.LongitudeAndLatitude__c ;  //设备经纬度
-			var arr = equLngLat.split(/,|，/) ;   //分割半角或全角，
 			//经纬度为空，或者格式为“纬度，精度”的位置
-			if(equLngLat == null || parseInt(arr[0])<parseInt(arr[1])){
-				console.log("自定维护设备经纬度") ;
-				//签到并更新当前位置经纬度到设备
-				if(_this.position.info == "SUCCESS"){
-					_this.isable = true; 
-					this.signCallout(_this,_this.position.lnglat,true) ; 
-
-				}else{
-					_this.$notify({
-						title: '',
-						message: '正在定位，请稍后。。。',
-						duration:1500,
-						type: 'info'
-					}); 
-				}
+			if(equLngLat == null || equLngLat == 'undefined'){
+				_this.isable = true; 
+				_this.signCallout(_this,_this.position.lnglat,true) ; 
 			}else{
-				console.log("计算当前位置到设备的距离。") ; 
-				//距离计算
-				_this.getDistance() ;
-				if(_this.position.info == "SUCCESS"){
-					//使用任务中配置的“定位精度”进行距离的判断，默认为200.
+				var arr = equLngLat.split(/,|，/) ;  
+				if(parseInt(arr[0])<parseInt(arr[1])){
+					_this.isable = true; 
+					_this.signCallout(_this,_this.position.lnglat) ; 
+				}else{
+					//_this.getDistance() ;
 					var Precision = 'Precision__c' in _this.polling ? _this.polling.Precision__c : 200 ;
-
+					
 					if(parseInt(_this.dist) <= Precision){
 						_this.isable = true; 
-						this.signCallout(_this,"",false) ; 
+						_this.signCallout(_this,"") ; 
 					}else{
 						_this.$notify({
 							title: '签到提示',
@@ -366,7 +467,7 @@ export default {
 				}
 			}
         },
-		signCallout(vm,lnglat,isAutoAssertLnglat){
+		signCallout(vm,lnglat){
 			var _this = vm ; 
 			_this.$request_SF({
 				method:"POST",
@@ -392,7 +493,7 @@ export default {
 					_this.isSign2 = false ; 
 					_this.isable = false ; 
 
-					_this.autoAssertLnglat = isAutoAssertLnglat ;   //自动签到
+					//_this.autoAssertLnglat = isAutoAssertLnglat ;   //自动签到
 					//更新签到时间
 					_this.signtime = true ;  
 				}else{
@@ -418,7 +519,7 @@ export default {
 		signout(){
 			let _this = this ; 
 			//获取距离
-			_this.getDistance() ; 
+			//_this.getDistance() ; 
 
 			//获取任务中配置的允许的定位精度，默认为200
 			var Precision = 'Precision__c' in _this.polling ? _this.polling.Precision__c : 200 ;
@@ -447,6 +548,17 @@ export default {
 						_this.read = true; 			//input 只读状态
 						_this.isable = true;   //按钮 “不可操作” 状态
 
+						//随行人员
+						var partnerArr = [] ;
+						if(_this.partnerSelected.length > 0){
+							for(var i=0 ;i<_this.partnerSelected.length ;i++){
+								var userId = _this.partnerSelected[i].userId ; 
+								partnerArr.push(userId) ; 
+							}
+						}
+
+						var partnerIds = partnerArr.join(',') ;
+
 						_this.$request_SF({
 							method:"POST",
 							url:"/PlatformSignoutRest/doSignout",
@@ -457,6 +569,7 @@ export default {
 								pressure:_this.pressure + _this.unit ,  //运行压力
 								partner:_this.partner ,  //随行人员
 								remark:_this.remark ,  //备注
+								partnerIds:partnerIds,						//随行人员，userID以逗号分隔
 							},
 							headers:{
 								Authorization:"Bearer "+this.accessToken
@@ -560,31 +673,36 @@ export default {
 		//距离计算,地址解析(设备经纬度或设备地址不为空的情况下计算距离)
 		getDistance(){
 			var _this = this ; 
-			var equLngLat = _this.$store.state.pollingData.polling.Equipment__r.LongitudeAndLatitude__c ;  //设备经纬度
-			var arr = equLngLat.split(/,|，/) ;   //分割半角或全角，
-			
+			var equLngLat = _this.polling.Equipment__r.LongitudeAndLatitude__c ;  //设备经纬度
+
 			//定位当前位置成功
-			if(_this.position.info == "SUCCESS"){ 
-				//设备经纬度不为空
-				if(equLngLat != null && equLngLat != "" && parseInt(arr[0])>parseInt(arr[1])){
-					var start = _this.position.position ;
-					var end = new AMap.LngLat(arr[0],arr[1]) ;  
-					_this.dist = Math.round(start.distance(end));   //当前位置和设备经纬度之间的直线距离
-				}
-				//自定维护设备经纬度
-				else if(_this.autoAssertLnglat == true){
-					_this.dist = "0" ; 
-				}
-			}else {
+			if(! _this.position.info == "SUCCESS"){ 
 				_this.$notify({
 					title: '',
 					message: "正在定位当前位置，请稍后。。。",
 					duration:1500,
 					type: 'info'
 				}); 
+				return false ; 
 			}
-			
+
+			//设备经纬度不为空
+			if(equLngLat != null && equLngLat != "" && equLngLat != 'undefined'){
+				var arr = equLngLat.split(/,|，/) ;   //分割半角或全角，
+				if(parseInt(arr[0])>parseInt(arr[1])){
+					var start = _this.position.position ; 
+					var end = new AMap.LngLat(arr[0],arr[1]) ; 
+					_this.dist = Math.round(start.distance(end));   //当前位置和设备经纬度之间的直线距离
+					console.log("距离2："+this.dist)  ;
+				}else {
+					this.dist = 0 ; 
+				}
+				
+			}else {
+				_this.dist = 0 ; 
+			}
      	},
+
 		//刷新地址，重新定位
 		refreshLocation(){
 			this.myLocation = false ; 
@@ -651,6 +769,15 @@ export default {
 	filters:{
 		dataformat:function(datastr,pattern=""){
 			return Moment(datastr).format('YYYY-MM-DD HH:mm:ss')
+		},
+		filterPartner(userId,partnerSelected){
+			var arrStr = JSON.stringify(partnerSelected) ; 
+			//查找已经选择了的随行，并与传递过来的随行id进行匹配
+			if(arrStr.indexOf(userId) != -1){
+				return {'partnerChoose':true} ; 
+			}else{
+				return {'partnerChoose':false} ; 
+			}
 		}
 	},
 	mounted(){
@@ -663,19 +790,19 @@ export default {
 
 <style lang="scss" scoped>
 
-		//transition全场动画
-        .v-enter,
-        .v-leave-to{
-            opacity:0 ;
-            transform:translateY(-100px);
-        }
-        
-        /*v-enter-active:入场动画时间段*/
-        /*v-leave-active：离场动画时间段*/
-        .v-enter-active,
-        .v-leave-active{
-            transition:all 0.4s ease;
-		}
+	//transition全场动画
+	.v-enter,
+	.v-leave-to{
+		opacity:0 ;
+		transform:translateY(-100px);
+	}
+	
+	/*v-enter-active:入场动画时间段*/
+	/*v-leave-active：离场动画时间段*/
+	.v-enter-active,
+	.v-leave-active{
+		transition:all 0.4s ease;
+	}
 	.page-loadmore {
 		width: 100%;
 		height: 100%;
@@ -686,6 +813,7 @@ export default {
       * {
 		margin:0 ; 
 		padding:0 ; 
+		font-weight:400;
 	}
 	.container-fluid {
 		padding-right:15px;
@@ -696,6 +824,12 @@ export default {
 		padding-right:0px;
 	}
 	
+	input {
+		border:1px solid #ddd;
+		box-shadow: 0 0 0 0 #fff;
+		height:28px;
+	}
+
 	.ds {
 		font-size:12px ; 
 	}
@@ -802,21 +936,58 @@ export default {
 		background-color:white ;
 
 	}
-	.el-icon-document:before {
-    content: "";
-}
+		.el-icon-document:before {
+		content: "";
+	}
 
-.el-upload-list--picture .el-upload-list__item  {
-   height:60px;
-   padding:4px 5px 5px 90px ;
-}
+	.el-upload-list--picture .el-upload-list__item  {
+		height:60px;
+		padding:4px 5px 5px 90px ;
+	}
 
-.el-upload-list--picture .el-upload-list__item-name {
-   margin-top:12px;
-}
+	.el-upload-list--picture .el-upload-list__item-name {
+		margin-top:12px;
+	}
 
-.el-upload-list--picture .el-upload-list__item-thumbnail {
-   height:50px;
-}
+	.el-upload-list--picture .el-upload-list__item-thumbnail {
+		height:50px;
+	}
+
+	#afterSalesInfo {
+		list-style: none;
+		padding-left: 0;
+		padding:5px 0 60px 0;
+	}
+
+	#afterSalesInfo li {
+		display: inline-block;
+		padding:2px 5px; 
+		margin:10px 10px 0 0 ;
+		border-radius: 4px;
+		font-family:'雅黑' ;
+		font-weight:300;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04)  ; 
+	}
+
+	.afterSalesInfoBox {
+		position:absolute; 
+		top:-25px; 
+		right:0; 
+		width:80%;  
+		z-index:1000; 
+		background-color:#fff; 
+		border-radius:4px; padding:10px;
+		border:1px solid #87CEFA ;
+		box-shadow: 0 0 5px 1px #87CEFA;
+	}
+
+	.partnerItem {
+		margin:10px 10px 0 0; display:inline-block; padding:2px 5px; border-radius:4px;
+	}
+
+	.partnerChoose {
+		background-color: #F0FFFF;
+		color:#00BFFF;
+	}
 
 </style>

@@ -20,19 +20,19 @@
             <div id="footer" style="background-color:#F0FFF0;">
                 <div class="col-xs-4" style="padding:5px; height:100%;">
                     <div @click="$router.push('/polling')" class="content_center footer_item_box" style="background-color:#fff;">
-                        <span style="font-size:14px;">巡检</span><br />
+                        <span style="font-size:14px; font-weight:400;">巡检</span><br />
                         <img src="@/assets/ServicePlatform/imgs/xunjian.png" height="15" width="15" />
                     </div>
                 </div>
                 <div class="col-xs-4" style="padding:5px; height:100%;">
                     <div @click="$router.push('/repair')" class="content_center footer_item_box" style="background-color:#fff;">
-                        <span style="font-size:14px;">维修</span><br />
+                        <span style="font-size:14px; font-weight:400;">维修</span><br />
                         <img src="@/assets/ServicePlatform/imgs/weixiu.png" height="15" width="15"  />
                     </div>
                 </div>
                 <div class="col-xs-4" style="padding:5px; height:100%;">
                     <div @click="$router.push('/ventilation')" class="content_center footer_item_box" style="background-color:#fff;">
-                        <span style="font-size:14px;">通气</span><br />
+                        <span style="font-size:14px; font-weight:400;">通气</span><br />
                         <img src="@/assets/ServicePlatform/imgs/tongqi.png" height="15" width="15"  />
                     </div>
                 </div>
@@ -152,7 +152,7 @@
                 <!--考勤时间显示-->
                 <div style="padding-left:10px; font-size:12px;">
                     <div class="col-xs-12" style="padding-top:30px; border-bottom:1px solid #ccc;">
-                        <div class="col-xs-8" align="left"><span style="line-height:20px; font-size:14px;">考勤</span></div>
+                        <div class="col-xs-8" align="left"><span style="line-height:20px; font-size:14px; font-weight:400;">考勤</span></div>
                         <div class="col-xs-4" align="right">
                             <img  @click="getAttendanceData" width="20px" height="20px" src="@/assets/ServicePlatform/imgs/refresh.png" />
                         </div>
@@ -390,6 +390,9 @@ const vm = {
         },
         //获取考勤数据
 		getAttendanceData(){
+            //清空考勤数据
+            this.startDate = "" ; 
+            this.endDate = "" ; 
 			var _this = this ; 
             _this.$request_SF({
                 method: "get",
@@ -525,7 +528,8 @@ export default vm ;
         color: #313450; 
         line-height: 40px; 
         padding-left:10px;  
-        font-size:12px;
+        font-size:13px;
+        font-weight: 400;
     }
 
     .itemLine {

@@ -33,7 +33,7 @@
 				<!--任务列表，遍历体-->
 				<div  v-for="(repair,i) in search(keywords)" :id="repair.Id" :index="i" :key="repair.Id" class="col-xs-12 container-fluid splitLine">
 					<div id="item" class="col-xs-12" style="line-height:50px; ">
-						<div  class="col-xs-10">{{repair.Name}}</div>
+						<div  class="col-xs-10" style="font-weight:400;">{{repair.Name}}</div>
 						<div class="col-xs-2" align="right">
 							<a @click.stop="showDetails($event)">
 								<span id="myShow" class="glyphicon glyphicon-menu-down"></span>
